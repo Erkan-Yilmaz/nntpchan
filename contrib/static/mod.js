@@ -1,135 +1,66 @@
-/*
- * mod.js, moderator page js stuff
- */
-
-
-// TODO: implement mod panel all the way
-
-document.onload = function(ev) {
-  // populate the mod page with stuff
-}
-
-function get_longhash(str) {
-  var idx = str.indexOf("#") + 1;
-  if ( idx > 0 ) {
-    str = str.substr(idx);
-  }
-  console.log(str);
-  return str;
-}
-
-// handle ban command
-function nntpchan_ban() {
-  nntpchan_mod({
-    parser: get_longhash,
-    name: "ban",
-    handle: function(j) {
-      if (j.banned) {
-        return document.createTextNode(j.banned);
-      }
-    }
-  });
-}
-
-function nntpchan_unban() {
-  nntpchan_mod({
-    name: "unban",
-    handle: function(j) {
-      if (j.result) {
-        return document.createTextNode(j.result);
-      }
-    }
-  })
-}
-
-// handle delete command
-function nntpchan_delete() {
-  nntpchan_mod({
-    parser: get_longhash,
-    name: "del",
-    handle: function(j) {
-      var elem = document.createElement("div");
-      if (j.deleted) {
-        for ( var idx = 0 ; idx < j.deleted.length ; idx ++ ) {
-          var msg = "deleted: " + j.deleted[idx];
-          var e = document.createTextNode(msg);
-          var el = document.createElement("div");
-          el.appendChild(e);
-          elem.appendChild(el);
-        }
-      }
-      if (j.notdeleted) {
-        for ( var idx = 0 ; idx < j.notdeleted.length ; idx ++ ) {
-          var msg = "not deleted: " + j.notdeleted[idx];
-          var e = document.createTextNode(msg);
-          var el = document.createElement("div");
-          el.appendChild(e);
-          elem.appendChild(el);
-        }
-      }
-      return elem;
-    }
-  });
-}
-
-
-function nntpchan_mod(mod_action) {
-
-  // get the element
-  var input = document.getElementById("nntpchan_mod_target");
-  var target = input.value;
-  if (mod_action.parser) {
-    target = mod_action.parser(target);
-  }
-
-  var elem = document.getElementById("nntpchan_mod_result");
-  // clear old results
-  while( elem.firstChild ) {
-    elem.removeChild(elem.firstChild);
-  }
-
-
-  // fire off ajax
-  var ajax = new XMLHttpRequest();
-  ajax.onreadystatechange = function() {
-    if (ajax.readyState == XMLHttpRequest.DONE) {
-      var status = ajax.status;
-      // we gud?
-      if (status == 200) {
-        // yah
-        var txt = ajax.responseText;
-        var j = JSON.parse(txt);
-        if (j.error) {
-          var e = document.createTextNode(j.error);
-          elem.appendChild(e);
-        } else {
-          if (mod_action.handle) {
-            var result = mod_action.handle(j);
-            if (result) {
-              elem.appendChild(result);
-            } else {
-              // fail
-              alert("mod action failed, handler returned nothing");
-            }
-          } else {
-            // fail
-            alert("mod action has no handler");
-          }
-        }
-      } else if (status) {
-        // nah
-        // http error
-        elem.innerHTML = "error: HTTP "+status;
-      }
-      // clear input
-      input.value = "";
-    }
-  }
-  if (mod_action.name) {
-    var url = mod_action.name + "/" + target;
-    ajax.open("GET", url);
-    ajax.send();
-  } else {
-    alert("mod action has no name");
-  }
-}
+var modCommands = [
+  // login command
+  [/l(login)? (.*)/, function(m) {
+    var chat = this;
+    // mod login
+      chat.modLogin(m[2]);
+  },
+   "login as user", "/l user:password",
+  ],
+  [/cp (\d+)/, function(m) {
+    var chat = this;
+    // permaban the fucker
+    chat.modAction(3, 4, m[1], "CP", -1);
+  },
+   "handle illegal content", "/cp postnum",
+  ],
+  [/cnuke (\d+) (.*)/, function(m) {
+    var chat = this;
+    // channel ban + nuke files
+    chat.modAction(2, 4, m[1], m[2], -1);
+  },
+   "channel level ban+nuke", "/cnuke postnum reason goes here",
+  ],
+  [/purge (\d+) (.*)/, function(m) {
+    var chat = this;
+    // channel ban + nuke files
+    chat.modAction(2, 9, m[1], m[2], -1);
+  },
+   "channel level ban+nuke", "/cnuke postnum reason goes here",
+  ],
+  [/gnuke (\d+) (.*)/, function(m) {
+    var chat = this;
+    // global ban + nuke with reason
+    chat.modAction(3, 4, m[1], m[2], -1);
+  },
+   "global ban+nuke", "/gnuke postnum reason goes here",
+  ],
+  [/gban (\d+) (.*)/, function(m) {
+    var chat = this;
+    // global ban with reason
+    chat.modAction(3, 3, m[1], m[2], -1);
+  },
+   "global ban (no nuke)", "/gban postnum reason goes here",
+  ],
+  [/cban (\d+) (.*)/, function(m) {
+    var chat = this;
+    // channel ban with reason
+    chat.modAction(2, 3, m[1], m[2], -1);
+  },
+   "channel level ban (no nuke)", "/cban postnum reason goes here",
+  ],
+  [/dpost (\d+)/, function(m) {
+    var chat = this;
+    // channel level delete post
+    chat.modAction(1, 2, m[1]);
+  },
+   "delete post and file", "/dpost postnum",
+  ],
+  [/dfile (\d+)/, function(m) {
+    var chat = this;
+    // channel level delete file
+    chat.modAction(1, 1, m[1]);
+  },
+   "delete just file", "/dpost postnum",
+  ]
+]

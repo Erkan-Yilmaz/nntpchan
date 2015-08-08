@@ -1,0 +1,26 @@
+{{!
+  live.mustache -- live ui template
+  template parameters
+  - prefix ( the site prefix )
+}}
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <!-- this markup is taken verbatum from livechan's go port -->
+    <title>overchan live</title>
+    <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
+    <link rel='stylesheet' type='text/css' href='{{prefix}}static/chat.css'></link>
+    <style type='text/css' id='convo_filter' >
+      /* inline style for convo filter */
+    </style>
+    <script type='text/javascript' src='{{prefix}}static/login.js'></script>
+    <script type='text/javascript' src='{{prefix}}static/nav.js'></script>
+    <script type='text/javascript' src='{{prefix}}static/mod.js'></script>
+    <script type='text/javascript' src='{{prefix}}static/notify.js'></script>
+    <script type='text/javascript' src='{{prefix}}static/chat.js'></script>
+    <script type='text/javascript' src='{{prefix}}static/main.js'></script>
+  </head>
+<body>
+  <div id='chat' style="position:absolute;left:0;right:0;top:0;bottom:0;"></div>
+</body>
+</html>
